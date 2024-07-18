@@ -3,29 +3,23 @@ version: '3.7'
 services:
 
   app:
-    image:  gcr.io/toptal-hub/sidekiq-health:dev
-    command:
-      - --worker-name-env
-      - HOSTNAME
-      - --redis-url-env
-      - REDIS_URL
-      - --sentinels-env
-      - REDIS_SENTINELS
+    image:  us-central1-docker.pkg.dev/toptal-hub/containers/request-validation-service-production:psre-4695-allow-redis-sentinel-connection
     environment:
-      REDIS_URL: redis://:test1@sidekiq-master:6379/1
-      REDIS_SENTINELS: redis://redis-sentinel-1:26379,redis://redis-sentinel-2:26379,redis://redis-sentinel-3:26379
-    ports:
-      - 8080:8080
+      SETTINGS__CAS_PROXY__REDIS_CONFIG__NAME: sidekiq-master
+      SETTINGS__CAS_PROXY__REDIS_CONFIG__SENTINELS: redis://redis-sentinel-1:26379,redis://redis-sentinel-2:26379,redis://redis-sentinel-3:26379
+      SETTINGS__CAS_PROXY__REDIS_CONFIG__PASSWORD: test1
+      SETTINGS__CAS_PROXY__rack_proxy__backend: 'http://fake-platform'
     links:
       - redis-sentinel
+
+  fake-platform:
+    image: traefik/whoami
 
   redis-master:
     image: redis:6-alpine
     command: redis-server --requirepass test1
     volumes:
       - "./.data:/data"
-    ports:
-      - "6379:6379"
 
   redis-slave:
     image: redis:6-alpine
